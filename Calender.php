@@ -6,45 +6,49 @@ class Calendar
     public $prev;
     public $next;
     public $yearMonth;
-    private $_thisMonth;
+    private $thisMonth;
 
     public function __construct()
     {
-        try {
-            if (!isset($_GET['t']) || !preg_match('/\A\d{4}-\d{2}\Z/', $_GET['t'])) {
-                throw new \Exception();
+        $yearMonth = isset($_GET['t']) ? $_GET['t'] : null;
+        try{
+            if ($yearMonth) {
+                //不正な引数が指定された場合はエラーを表示する
+                $this->thisMonth = new \DateTime($yearMonth);
+            } else {
+                $this->thisMonth = new \DateTime('first day of this month');
             }
-            $this->_thisMonth = new \DateTime($_GET['t']);
-        } catch (\Exception $e) {
-            $this->_thisMonth = new \DateTime('first day of this month');
+        } catch(\Exception $e) {
+            echo 'カレンダーの表示に失敗しました。';
         }
-        $this->prev = $this->_createPrevLink();
-        $this->next = $this->_createNextLink();
-        $this->yearMonth = $this->_thisMonth->format('F Y');
+
+        $this->prev = $this->createPrevlink();
+        $this->next = $this->createNextlink();
+        $this->yearMonth = $this->thisMonth->format('F Y');
     }
 
-    public function _createPrevlink()
+    public function createPrevlink()
     {
-        $dt = clone $this->_thisMonth;
+        $dt = clone $this->thisMonth;
         return $dt->modify('-1 month')->format('Y-m');
     }
 
-    public function _createNextlink()
+    public function createNextlink()
     {
-        $dt = clone $this->_thisMonth;
+        $dt = clone $this->thisMonth;
         return $dt->modify('+1 month')->format('Y-m');
     }
 
     public function show()
     {
-        $tail = $this->_getTail();
-        $body = $this->_getBody();
-        $head = $this->_getHead();
+        $tail = $this->getTail();
+        $body = $this->getBody();
+        $head = $this->getHead();
         $html = '<tr>' . $tail . $body . $head . '</tr>';
         echo $html;
     }
 
-    private function _getTail()
+    private function getTail()
     {
         $tail = '';
         $lastDayOfPrevMonth = new \Datetime('last day of' . $this->yearMonth . '-1 month');
@@ -55,7 +59,7 @@ class Calendar
         return $tail;
     }
 
-    private function _getBody()
+    private function getBody()
     {
         $body = '';
         $period = new \DatePeriod(
@@ -65,14 +69,16 @@ class Calendar
         );
         $today = new \DateTime('today');
         foreach ($period as $day) {
-            if ($day->format('w') === '0') {$body .= '</tr><tr>';}
+            if ($day->format('w') === '0') {
+                $body .= '</tr><tr>';
+            }
             $todayClass = ($day->format('Y-m-d') === $today->format('Y-m-d')) ? 'today' : '';
             $body .= sprintf('<td class="youbi_%d %s">%d</td>', $day->format('w'), $todayClass, $day->format('d'));
         }
         return $body;
     }
 
-    private function _getHead()
+    private function getHead()
     {
         $head = '';
         $firstDayOfNextMonth = new \Datetime('first day of' . $this->yearMonth . '+1 month');
@@ -83,5 +89,3 @@ class Calendar
         return $head;
     }
 }
-
-?>
